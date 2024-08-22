@@ -1,14 +1,19 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:todos_flutter_firebase/providers/tasks_provider.dart';
 import 'package:todos_flutter_firebase/utils/colors.dart';
 
 class EditTodo extends StatefulWidget {
   final String initialTitle;
   final String initialDescription;
+  final String todoId;
 
   const EditTodo({
     super.key,
     required this.initialTitle,
     required this.initialDescription,
+    required this.todoId,
   });
 
   @override
@@ -18,6 +23,7 @@ class EditTodo extends StatefulWidget {
 class _EditTodoState extends State<EditTodo> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -32,6 +38,32 @@ class _EditTodoState extends State<EditTodo> {
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _updateTodo() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    // Reference to the Firestore document
+    DocumentReference todoRef =
+        FirebaseFirestore.instance.collection('todos').doc(widget.todoId);
+
+    // Update the document in Firestore
+    await todoRef.update({
+      'title': _titleController.text,
+      'description': _descriptionController.text,
+    });
+
+    // Update the task in the provider
+    Provider.of<TasksProvider>(context, listen: false).updateTask(
+        widget.todoId, _titleController.text, _descriptionController.text);
+
+    Navigator.of(context).pop();
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -95,9 +127,7 @@ class _EditTodoState extends State<EditTodo> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () {
-              // Handle form submission
-            },
+            onPressed: _updateTodo,
             style: ElevatedButton.styleFrom(
               backgroundColor: selectColor,
               padding:
@@ -106,12 +136,14 @@ class _EditTodoState extends State<EditTodo> {
                 borderRadius: BorderRadius.circular(8.0),
               ),
             ),
-            child: const Text(
-              'Edit it',
-              style: TextStyle(
-                color: textColor,
-              ),
-            ),
+            child: isLoading
+                ? const CircularProgressIndicator(color: textColor)
+                : const Text(
+                    'Edit it',
+                    style: TextStyle(
+                      color: textColor,
+                    ),
+                  ),
           ),
         ),
       ],

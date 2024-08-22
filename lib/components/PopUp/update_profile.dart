@@ -1,4 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:todos_flutter_firebase/providers/user_provider.dart';
 import 'package:todos_flutter_firebase/utils/colors.dart';
 
 class UpdateProfile extends StatefulWidget {
@@ -18,6 +21,7 @@ class UpdateProfile extends StatefulWidget {
 class _UpdateProfileState extends State<UpdateProfile> {
   late TextEditingController _userNameController;
   late TextEditingController _emailController;
+  bool isLoading = false;
 
   @override
   void initState() {
@@ -31,6 +35,55 @@ class _UpdateProfileState extends State<UpdateProfile> {
     _userNameController.dispose();
     _emailController.dispose();
     super.dispose();
+  }
+
+  Future<void> _updateprofile() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No user found')),
+      );
+      return;
+    }
+
+    try {
+      // Update Firestore user data
+      final docUser =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+      await docUser.update({
+        'username': _userNameController.text,
+        'email': _emailController.text,
+      });
+
+      userProvider.setUser(
+        user.copyWith(
+          username: _userNameController.text,
+          email: _emailController.text,
+        ),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully')),
+      );
+
+      // Close the popup
+      Navigator.of(context).pop();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update profile: $e')),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override
@@ -92,9 +145,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () {
-              // Handle form submission
-            },
+            onPressed: isLoading ? null : _updateprofile,
             style: ElevatedButton.styleFrom(
               backgroundColor: selectColor,
               padding:
@@ -103,12 +154,14 @@ class _UpdateProfileState extends State<UpdateProfile> {
                 borderRadius: BorderRadius.circular(8.0),
               ),
             ),
-            child: const Text(
-              'Update',
-              style: TextStyle(
-                color: textColor,
-              ),
-            ),
+            child: isLoading
+                ? const CircularProgressIndicator(color: textColor)
+                : const Text(
+                    'Update',
+                    style: TextStyle(
+                      color: textColor,
+                    ),
+                  ),
           ),
         ),
       ],

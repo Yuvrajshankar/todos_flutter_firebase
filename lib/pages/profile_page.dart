@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-import 'package:todos_flutter_firebase/Data/todoData.dart';
+import 'package:provider/provider.dart';
 import 'package:todos_flutter_firebase/components/PopUp/delete_profile.dart';
 import 'package:todos_flutter_firebase/components/PopUp/popup.dart';
 import 'package:todos_flutter_firebase/components/PopUp/update_profile.dart';
 import 'package:todos_flutter_firebase/components/TodoBox/todo_box.dart';
+import 'package:todos_flutter_firebase/models/task.dart';
+import 'package:todos_flutter_firebase/models/user.dart';
+import 'package:todos_flutter_firebase/providers/tasks_provider.dart';
+import 'package:todos_flutter_firebase/providers/user_provider.dart';
 import 'package:todos_flutter_firebase/utils/colors.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -16,22 +19,32 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String filter = 'All';
+  String? username;
+  String? email;
+  bool isLoading = true;
 
-  List<Map<String, dynamic>> filteredTodos() {
+  List<TaskModel> filteredTodos(List<TaskModel> tasks) {
     switch (filter) {
       case 'Pending':
-        return todoData.where((todo) => todo['status'] == 'pending').toList();
+        return tasks.where((todo) => todo.status == 'pending').toList();
       case 'Completed':
-        return todoData.where((todo) => todo['status'] == 'completed').toList();
+        return tasks.where((todo) => todo.status == 'completed').toList();
       case 'Deleted':
-        return todoData.where((todo) => todo['status'] == 'deleted').toList();
+        return tasks.where((todo) => todo.status == 'deleted').toList();
       default:
-        return todoData;
+        return tasks;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final tasksProvider = Provider.of<TasksProvider>(context);
+    final UserModel? user = userProvider.user;
+    final tasks = tasksProvider.tasks;
+
+    final List<TaskModel> displayedTodos = filteredTodos(tasks);
+
     return Scaffold(
       body: Column(
         children: [
@@ -43,21 +56,21 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             child: Column(
               children: [
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Username:',
+                    const Text('Username:',
                         style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text("uv"),
+                    Text(user?.username ?? 'N/A'),
                   ],
                 ),
                 const SizedBox(height: 10),
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Email:',
+                    const Text('Email:',
                         style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text("uvdev@gmail.com"),
+                    Text(user?.email ?? 'N/A'),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -68,9 +81,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       onPressed: () {
                         showCustomPopup(
                           context: context,
-                          content: const UpdateProfile(
-                            initialName: "uv",
-                            initialEmail: "uvdev@gmail.com",
+                          content: UpdateProfile(
+                            initialName: user?.username ?? '',
+                            initialEmail: user?.email ?? '',
                           ),
                         );
                       },
@@ -135,9 +148,17 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           const SizedBox(height: 20),
           Expanded(
-            child: TodoBox(
-              todos: filteredTodos(),
-            ),
+            child: displayedTodos.isNotEmpty
+                ? TodoBox(todos: displayedTodos)
+                : const Center(
+                    child: Text(
+                      'No tasks',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),

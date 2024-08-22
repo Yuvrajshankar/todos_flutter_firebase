@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:todos_flutter_firebase/components/Auth/my_button.dart';
 import 'package:todos_flutter_firebase/components/Auth/my_textfield.dart';
+import 'package:todos_flutter_firebase/utils/colors.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,9 +14,43 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  bool isLoading = false;
 
-  // register user method
-  void login() {}
+  // login user method
+  void login() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+
+      // debugPrint('FirebaseAuthException: ${e.code}');
+
+      switch (e.code) {
+        case "invalid-credential":
+          errorMessage = "Please check the credentials.";
+          break;
+        default:
+          errorMessage = "An unexpected error occurred.";
+          break;
+      }
+
+      // Display the error to the user
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(errorMessage)));
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +77,37 @@ class _LoginPageState extends State<LoginPage> {
         // Button "Join now"
         MyButton(
           onTap: login,
-          text: "Sign in",
+          content: isLoading
+              ? const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.0,
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      "Signing in...",
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                )
+              : const Text(
+                  "Sign in",
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
         ),
       ],
     );

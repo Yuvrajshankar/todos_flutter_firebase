@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:todos_flutter_firebase/components/PopUp/create_todo.dart';
 import 'package:todos_flutter_firebase/components/PopUp/popup.dart';
@@ -5,7 +6,10 @@ import 'package:todos_flutter_firebase/pages/completed_page.dart';
 import 'package:todos_flutter_firebase/pages/deleted_page.dart';
 import 'package:todos_flutter_firebase/pages/pending_page.dart';
 import 'package:todos_flutter_firebase/pages/profile_page.dart';
+import 'package:todos_flutter_firebase/providers/tasks_provider.dart';
+import 'package:todos_flutter_firebase/providers/user_provider.dart';
 import 'package:todos_flutter_firebase/utils/colors.dart';
+import 'package:provider/provider.dart';
 
 class Layout extends StatefulWidget {
   const Layout({super.key});
@@ -35,6 +39,22 @@ class _LayoutState extends State<Layout> {
     });
   }
 
+  void logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      Provider.of<UserProvider>(context, listen: false).clearUser();
+      Provider.of<TasksProvider>(context, listen: false).clearTasks();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('logged out')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error logging out: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,7 +80,7 @@ class _LayoutState extends State<Layout> {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: IconButton(
-              onPressed: () {},
+              onPressed: logout,
               icon: const Icon(Icons.power_settings_new),
             ),
           )

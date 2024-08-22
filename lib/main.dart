@@ -1,14 +1,24 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:todos_flutter_firebase/layout/layout.dart';
-import 'package:todos_flutter_firebase/pages/auth_page.dart';
+import 'package:provider/provider.dart';
+import 'package:todos_flutter_firebase/check_auth.dart';
+import 'package:todos_flutter_firebase/firebase_options.dart';
+import 'package:todos_flutter_firebase/providers/tasks_provider.dart';
+import 'package:todos_flutter_firebase/providers/user_provider.dart';
 import 'package:todos_flutter_firebase/utils/colors.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(systemNavigationBarColor: navColor),
   );
-  runApp(const MyApp());
+  runApp(
+    const MyApp(),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -16,13 +26,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Todos.',
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: backgroundColor,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => UserProvider()),
+        ChangeNotifierProvider(create: (context) => TasksProvider()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Todos.',
+        theme: ThemeData.dark().copyWith(
+          scaffoldBackgroundColor: backgroundColor,
+        ),
+        home: const CheckAuth(),
       ),
-      home: const AuthPage(),
     );
   }
 }
