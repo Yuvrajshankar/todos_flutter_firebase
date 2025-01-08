@@ -1,16 +1,9 @@
 # todos_flutter_firebase
 
-A new Flutter project.
+## Description
 
-## Getting Started
+Full stack Task management app built with Flutter + Firebase
 
-This project is a starting point for a Flutter application.
+## Demo
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+[todos.png]([https://todos-6aaee.web.app](https://raw.githubusercontent.com/Yuvrajshankar/todos_flutter_firebase/refs/heads/main/todos.png))
